@@ -63,6 +63,7 @@ runs:
   steps:
     - name: Send Discord Notification
       shell: bash
+      working-directory: ${{ github.action_path }}
       env:
         DISCORD_WEBHOOK: ${{ inputs.webhook-url }}
         DISCORD_TITLE: ${{ inputs.title }}
@@ -78,4 +79,5 @@ runs:
         DISCORD_SCREENSHOT: ${{ inputs.screenshot }}
         DISCORD_PR_URL: ${{ inputs.pr-url }}
         DISCORD_COMMIT_MESSAGE: ${{ inputs.commit-message }}
-      run: ${{ github.action_path }}/discord-notify.sh
+      run: |
+        bash discord-notify.sh
