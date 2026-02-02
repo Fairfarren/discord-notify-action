@@ -78,5 +78,4 @@ runs:
         DISCORD_SCREENSHOT: ${{ inputs.screenshot }}
         DISCORD_PR_URL: ${{ inputs.pr-url }}
         DISCORD_COMMIT_MESSAGE: ${{ inputs.commit-message }}
-      run: |
-        ${{ github.action_path }}/discord-notify.sh
+      run: ${{ github.action_path }}/discord-notify.sh
