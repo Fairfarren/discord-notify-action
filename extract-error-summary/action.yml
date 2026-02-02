@@ -1,0 +1,89 @@
+name: 'Extract Error Summary and Notify'
+description: '从日志文件提取错误摘要并发送 Discord 通知'
+author: 'fairfarren'
+
+inputs:
+  log-file:
+    description: '日志文件路径'
+    required: true
+  job-name:
+    description: 'Job 名称用于 Discord 通知'
+    required: true
+  failure-title:
+    description: '失败通知标题'
+    required: true
+  webhook-url:
+    description: 'Discord Webhook URL'
+    required: true
+  repository:
+    description: 'GitHub 仓库'
+    required: false
+    default: ${{ github.repository }}
+  branch:
+    description: '分支名称'
+    required: false
+    default: ${{ github.ref_name }}
+  run-id:
+    description: 'GitHub Actions Run ID'
+    required: false
+    default: ${{ github.run_id }}
+  run-url:
+    description: 'GitHub Actions Run URL'
+    required: false
+    default: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  pr-url:
+    description: 'Pull Request URL'
+    required: false
+    default: ''
+  commit-message:
+    description: '提交信息'
+    required: false
+    default: ''
+
+outputs:
+  summary:
+    description: '提取的错误摘要'
+    value: ${{ steps.extract.outputs.summary }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Extract Error Summary
+      id: extract
+      shell: bash
+      run: |
+        if [ -f "${{ inputs.log-file }}" ]; then
+          # 移除 ANSI 颜色码，获取最后 15 行
+          SUMMARY=$(sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" "${{ inputs.log-file }}" | tail -n 15)
+
+          # 限制 800 字符
+          if [ ${#SUMMARY} -gt 800 ]; then
+            SUMMARY="${SUMMARY:0:800}\n\n...(已截断，查看完整日志: ${{ inputs.run-url }})"
+          fi
+          if [ -z "$SUMMARY" ]; then
+            SUMMARY="Log file is empty."
+          fi
+        else
+          SUMMARY="${{ inputs.log-file }} not found."
+        fi
+
+        echo "summary<<EOF" >> $GITHUB_OUTPUT
+        echo "$SUMMARY" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Notify Discord (Failure)
+      shell: bash
+      env:
+        DISCORD_WEBHOOK: ${{ inputs.webhook-url }}
+        DISCORD_TITLE: ${{ inputs.failure-title }}
+        DISCORD_STATUS: "failure"
+        DISCORD_JOB: ${{ inputs.job-name }}
+        DISCORD_REPOSITORY: ${{ inputs.repository }}
+        DISCORD_BRANCH: ${{ inputs.branch }}
+        DISCORD_RUN_ID: ${{ inputs.run-id }}
+        DISCORD_RUN_URL: ${{ inputs.run-url }}
+        DISCORD_ERROR_SUMMARY: ${{ steps.extract.outputs.summary }}
+        DISCORD_PR_URL: ${{ inputs.pr-url }}
+        DISCORD_COMMIT_MESSAGE: ${{ inputs.commit-message }}
+      run: |
+        ${{ github.action_path }}/../discord-notify.sh

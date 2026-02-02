@@ -1,0 +1,82 @@
+name: 'Discord Notify'
+description: '发送格式化的通知到 Discord'
+author: 'fairfarren'
+
+inputs:
+  webhook-url:
+    description: 'Discord Webhook URL'
+    required: true
+  title:
+    description: '通知标题'
+    required: true
+  status:
+    description: '状态标识 (success/failure/warning/info)'
+    required: false
+    default: 'info'
+  color:
+    description: '嵌入颜色（十进制，不设置则根据 status 自动选择）'
+    required: false
+    default: ''
+  job:
+    description: 'Job 名称'
+    required: false
+    default: ''
+  repository:
+    description: 'GitHub 仓库'
+    required: false
+    default: ''
+  branch:
+    description: '分支名称'
+    required: false
+    default: ''
+  run-id:
+    description: 'GitHub Actions Run ID'
+    required: false
+    default: ''
+  run-url:
+    description: 'GitHub Actions Run URL'
+    required: false
+    default: ''
+  error-summary:
+    description: '错误摘要'
+    required: false
+    default: ''
+  preview-url:
+    description: '预览地址'
+    required: false
+    default: ''
+  screenshot:
+    description: '截图文件路径'
+    required: false
+    default: ''
+  pr-url:
+    description: 'Pull Request URL'
+    required: false
+    default: ''
+  commit-message:
+    description: '提交信息'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Send Discord Notification
+      shell: bash
+      env:
+        DISCORD_WEBHOOK: ${{ inputs.webhook-url }}
+        DISCORD_TITLE: ${{ inputs.title }}
+        DISCORD_COLOR: ${{ inputs.color }}
+        DISCORD_STATUS: ${{ inputs.status }}
+        DISCORD_JOB: ${{ inputs.job }}
+        DISCORD_REPOSITORY: ${{ inputs.repository }}
+        DISCORD_BRANCH: ${{ inputs.branch }}
+        DISCORD_RUN_ID: ${{ inputs.run-id }}
+        DISCORD_RUN_URL: ${{ inputs.run-url }}
+        DISCORD_ERROR_SUMMARY: ${{ inputs.error-summary }}
+        DISCORD_PREVIEW_URL: ${{ inputs.preview-url }}
+        DISCORD_SCREENSHOT: ${{ inputs.screenshot }}
+        DISCORD_PR_URL: ${{ inputs.pr-url }}
+        DISCORD_COMMIT_MESSAGE: ${{ inputs.commit-message }}
+      run: |
+        ${{ github.action_path }}/discord-notify.sh
