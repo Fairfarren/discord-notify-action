@@ -79,5 +79,6 @@ runs:
         DISCORD_SCREENSHOT: ${{ inputs.screenshot }}
         DISCORD_PR_URL: ${{ inputs.pr-url }}
         DISCORD_COMMIT_MESSAGE: ${{ inputs.commit-message }}
+        GITHUB_WORKSPACE: ${{ github.workspace }}
       run: |
         bash discord-notify.sh

@@ -64,14 +64,39 @@ EMBED="{\"title\":\"${TITLE}\",\"color\":${COLOR},\"fields\":[${FIELDS}],\"url\"
 PAYLOAD="{\"embeds\":[${EMBED}]}"
 
 # 发送到 Discord Webhook
-if [ -n "${SCREENSHOT}" ] && [ -f "${SCREENSHOT}" ]; then
-  echo "发送带截图的通知: ${SCREENSHOT}"
+# 先检查是否存在文件，然后尝试在 workspace 目录中查找
+SCREENSHOT_FILE=""
+
+if [ -n "${SCREENSHOT}" ]; then
+  # 尝试直接使用路径
+  if [ -f "${SCREENSHOT}" ]; then
+    SCREENSHOT_FILE="${SCREENSHOT}"
+    echo "✅ 找到截图文件（直接路径）: ${SCREENSHOT}"
+  # 尝试在工作区目录中查找（相对路径）
+  elif [ -f "${GITHUB_WORKSPACE}/${SCREENSHOT}" ]; then
+    SCREENSHOT_FILE="${GITHUB_WORKSPACE}/${SCREENSHOT}"
+    echo "✅ 找到截图文件（workspace 路径）: ${SCREENSHOT_FILE}"
+  # 尝试在当前目录中查找
+  elif [ -f "$(pwd)/${SCREENSHOT}" ]; then
+    SCREENSHOT_FILE="$(pwd)/${SCREENSHOT}"
+    echo "✅ 找到截图文件（当前目录）: ${SCREENSHOT_FILE}"
+  else
+    echo "⚠️ 截图文件不存在: ${SCREENSHOT}"
+    echo "   GITHUB_WORKSPACE: ${GITHUB_WORKSPACE}"
+    echo "   当前目录: $(pwd)"
+    echo "   尝试查找 e2e-artifacts 目录..."
+    find "${GITHUB_WORKSPACE:-.}" -name "failure-screenshot.png" -o -name "*.png" 2>/dev/null | head -n 5 || true
+  fi
+fi
+
+if [ -n "${SCREENSHOT_FILE}" ] && [ -f "${SCREENSHOT_FILE}" ]; then
+  echo "📸 发送带截图的通知: ${SCREENSHOT_FILE}"
   curl -X POST "${WEBHOOK_URL}" \
     -F "payload_json=${PAYLOAD}" \
-    -F "files[0]=@${SCREENSHOT}" \
+    -F "files[0]=@${SCREENSHOT_FILE}" \
     --silent --show-error
 else
-  echo "发送 Embed 通知"
+  echo "📢 发送 Embed 通知"
   curl -X POST "${WEBHOOK_URL}" \
     -H "Content-Type: application/json" \
     -d "${PAYLOAD}" \
